@@ -1,6 +1,6 @@
 
 
---V3
+--V4
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5267,7 +5267,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(tonumber(data.value))
 				end
 			end,
 		},
