@@ -1,6 +1,6 @@
 
 
---V4
+--V5
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5363,7 +5363,7 @@ local SaveManager = {} do
 
     -- baca sekali, decode sekali
     local raw = readfile(name)
-    local ok, decoded = pcall(HttpService.JSONDecode, HttpService, raw)
+    local ok, decoded = pcall(httpService.JSONDecode, httpService, raw)
     if not ok then
         return false, "decode error"
     end
