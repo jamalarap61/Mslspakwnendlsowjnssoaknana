@@ -1,6 +1,6 @@
 
 
---V16
+--V1
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5278,16 +5278,16 @@ local SaveManager = {} do
 			Load = function(idx, datas)
 	local opt = SaveManager.Options[idx]
 
-	if data.mutli == true then
-	if typeof(data.value) == "table" and #data.value > 0 then
+	if datas.mutli == true then
+	if typeof(datas.value) == "table" and #datas.value > 0 then
 		-- data.value berisi array/table
-		opt:SetValue(data.value)
+		opt:SetValue(datas.value)
 		print("Dropdown Table") 
 	end
-elseif data.mutli == false then
-	if typeof(data.value) == "string" and data.value ~= "" then
+elseif datas.mutli == false then
+	if typeof(datas.value) == "string" and datas.value ~= "" then
 		-- data.value berisi string
-		opt:SetValue(data.value)
+		opt:SetValue(datas.value)
 		print("Dropdown string") 
 	end
 end, 
