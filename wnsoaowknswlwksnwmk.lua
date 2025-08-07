@@ -1,6 +1,6 @@
 
 
---V1
+--V3
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5353,24 +5353,49 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:Load(name)
-		if (not name) then
-			return false, "no config file is selected"
-		end
+    -- Validate
+    if not name then
+        return false, "no config file is selected"
+    end
+    if not isfile(name) then
+        return false, "Create Config Save File"
+    end
 
-		local file = name
-		if not isfile(file) then return false, "Create Config Save File" end
+    -- Decode JSON
+    local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(name))
+    if not ok or type(decoded) ~= "table" or type(decoded.objects) ~= "table" then
+        return false, "decode error"
+    end
 
-		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-		if not success then return false, "decode error" end
+    -- Init cache
+    self._loadedObjects = self._loadedObjects or {}
+    local groups = {}
 
-		for _, option in next, decoded.objects do
-			if self.Parser[option.type] and not self.Ignore[option.idx] then
-				task.spawn(function() self.Parser[option.type].Load(option.idx, option) end)
-			end
-		end
+    -- Group & diff
+    for i = 1, #decoded.objects do
+        local opt = decoded.objects[i]
+        if not self.Ignore[opt.idx] then
+            local prev = self._loadedObjects[opt.idx]
+            if not prev or prev.value ~= opt.value then
+                groups[opt.type] = groups[opt.type] or {}
+                groups[opt.type][#groups[opt.type] + 1] = opt
+                self._loadedObjects[opt.idx] = opt
+            end
+        end
+    end
 
-		return true
-	end
+    -- Execute loads
+    for typeName, opts in pairs(groups) do
+        local parser = self.Parser[typeName]
+        if parser and parser.Load then
+            for j = 1, #opts do
+                parser.Load(opts[j].idx, opts[j])
+            end
+        end
+    end
+
+    return true
+end
 
 	function SaveManager:IgnoreThemeSettings()
 		self:SetIgnoreIndexes({ 
