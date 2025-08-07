@@ -5279,11 +5279,11 @@ local SaveManager = {} do
 		local opt = SaveManager.Options[idx]
 		if not opt then return end
 
-		if data.multi == true then
+		if data.mutli == true then
 			if type(data.value) == "table" and #data.value > 0 then
 				opt:SetValue(data.value)
 			end
-		elseif data.multi == false then
+		elseif data.mutli == false then
 			if type(data.value) == "string" and data.value ~= "" then
 				opt:SetValue(data.value)
 			end
