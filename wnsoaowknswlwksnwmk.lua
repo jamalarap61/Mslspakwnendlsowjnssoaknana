@@ -1,4 +1,3 @@
---7777
 
 
 --V1
@@ -1633,14 +1632,14 @@ Components.Tab = (function()
 
 			Window.ContainerPosMotor:setGoal(Spring(15, { frequency = 10 }))
 			Window.ContainerBackMotor:setGoal(Spring(1, { frequency = 10 }))
-			task.wait(0.12)
+			task.wait(0.01)
 			for _, Container in next, TabModule.Containers do
 				Container.Visible = false
 			end
 			TabModule.Containers[Tab].Visible = true
 			Window.ContainerPosMotor:setGoal(Spring(0, { frequency = 5 }))
 			Window.ContainerBackMotor:setGoal(Spring(0, { frequency = 8 }))
-			task.wait(0.12)
+			task.wait(0.01)
 			Window.ContainerHolder.Parent = Window.ContainerCanvas
 		end)
 	end
@@ -1850,7 +1849,7 @@ Components.Dialog = (function()
 			RootTransparency(1)
 			Scale(1.1)
 			NewDialog.Root.UIStroke:Destroy()
-			task.wait(0.15)
+			task.wait(0.01)
 			NewDialog.TintFrame:Destroy()
 		end
 
