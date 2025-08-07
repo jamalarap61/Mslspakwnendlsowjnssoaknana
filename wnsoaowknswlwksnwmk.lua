@@ -1,6 +1,6 @@
 
 
---V5
+--V1
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5353,38 +5353,45 @@ local SaveManager = {} do
 	end
 
 
-	function SaveManager:Load(name)
-    if not name then
-        return false, "no config file is selected"
-    end
-    if not isfile(name) then
-        return false, "Create Config Save File"
-    end
+function SaveManager:Load(name)
+	if not name then
+		return false, "no config file is selected"
+	end
 
-    -- baca sekali, decode sekali
-    local raw = readfile(name)
-    local ok, decoded = pcall(httpService.JSONDecode, httpService, raw)
-    if not ok then
-        return false, "decode error"
-    end
+	local t0 = os.clock()
 
-    local objs   = decoded.objects
-    local parsers = self.Parser
-    local ignore  = self.Ignore
+	local file = name
+	if not isfile(file) then
+		return false, "Create Config Save File"
+	end
 
-    -- spawn sekali untuk semua load
-    task.spawn(function()
-        for i = 1, #objs do
-            local opt = objs[i]
-            local parser = parsers[opt.type]
-            if parser and not ignore[opt.idx] then
-                parser.Load(opt.idx, opt)
-            end
-        end
-    end)
+	local t1 = os.clock()
+	local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+	local t2 = os.clock()
+	if not success then
+		return false, "decode error"
+	end
 
-    return true
-end					
+	for _, option in next, decoded.objects do
+		if self.Parser[option.type] and not self.Ignore[option.idx] then
+			task.spawn(function()
+				local ti = os.clock()
+				self.Parser[option.type].Load(option.idx, option)
+				local tf = os.clock()
+				print(("Loaded [%s] in %.3f seconds"):format(option.idx, tf - ti))
+			end)
+		end
+	end
+
+	local t3 = os.clock()
+	print(("[Load] I/O: %.3f s | JSON decode: %.3f s | Spawn loop: %.3f s"):format(
+		t1 - t0,
+		t2 - t1,
+		t3 - t2
+	))
+
+	return true
+end			
 
 	function SaveManager:IgnoreThemeSettings()
 		self:SetIgnoreIndexes({ 
