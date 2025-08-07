@@ -1,6 +1,6 @@
 
 
---V3
+--V1
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5276,19 +5276,29 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-		local opt = SaveManager.Options[idx]
-		if not opt then return end
+				Load = function(idx, data)
+    local v = data.value
 
-		if data.mutli == true then
-			if type(data.value) == "table" and #data.value > 0 then
-				opt:SetValue(data.value)
-			end
-		elseif data.mutli == false then
-			if type(data.value) == "string" and data.value ~= "" then
-				opt:SetValue(data.value)
-			end
-		end
-	end,
+    -- skip if value is nil
+    if v == nil then
+        return
+    end
+
+    -- skip if empty string
+    if type(v) == "string" and v == "" then
+        return
+    end
+
+    -- skip if empty table
+    if type(v) == "table" and #v == 0 then
+        return
+    end
+
+    -- process only valid values
+    if SaveManager.Options[idx] then
+        SaveManager.Options[idx]:SetValue(v)
+    end
+end,
 		},
 		Colorpicker = {
 			Save = function(idx, object)
@@ -5361,46 +5371,25 @@ local SaveManager = {} do
 		return true
 	end
 
-
-function SaveManager:Load(name)
-	if not name then
-		return false, "no config file is selected"
-	end
-
-	local t0 = os.clock()
-
-	local file = name
-	if not isfile(file) then
-		return false, "Create Config Save File"
-	end
-
-	local t1 = os.clock()
-	local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-	local t2 = os.clock()
-	if not success then
-		return false, "decode error"
-	end
-
-	for _, option in next, decoded.objects do
-		if self.Parser[option.type] and not self.Ignore[option.idx] then
-			task.spawn(function()
-				local ti = os.clock()
-				self.Parser[option.type].Load(option.idx, option)
-				local tf = os.clock()
-				print(("Loaded [%s] in %.3f seconds"):format(option.idx, tf - ti))
-			end)
+	function SaveManager:Load(name)
+		if (not name) then
+			return false, "no config file is selected"
 		end
+
+		local file = name
+		if not isfile(file) then return false, "Create Config Save File" end
+
+		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+		if not success then return false, "decode error" end
+
+		for _, option in next, decoded.objects do
+			if self.Parser[option.type] and not self.Ignore[option.idx] then
+				task.spawn(function() self.Parser[option.type].Load(option.idx, option) end)
+			end
+		end
+
+		return true
 	end
-
-	local t3 = os.clock()
-	print(("[Load] I/O: %.3f s | JSON decode: %.3f s | Spawn loop: %.3f s"):format(
-		t1 - t0,
-		t2 - t1,
-		t3 - t2
-	))
-
-	return true
-end			
 
 	function SaveManager:IgnoreThemeSettings()
 		self:SetIgnoreIndexes({ 
