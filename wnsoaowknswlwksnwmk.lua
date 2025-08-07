@@ -1,6 +1,6 @@
 
 
---V1
+--V2
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5276,10 +5276,19 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
-				end
-			end,
+		local opt = SaveManager.Options[idx]
+		if not opt then return end
+
+		if data.mutli == true then
+			if type(data.value) == "table" and #data.value > 0 then
+				opt:SetValue(data.value, true)
+			end
+		elseif data.mutli == false then
+			if type(data.value) == "string" and data.value ~= "" then
+				opt:SetValue(data.value, true)
+			end
+		end
+	end,
 		},
 		Colorpicker = {
 			Save = function(idx, object)
