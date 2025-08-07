@@ -1,6 +1,4 @@
 
---v12
-
 
 --V1
 local Lighting = game:GetService("Lighting")
@@ -5278,30 +5276,10 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-    local opt = SaveManager.Options[idx]
-    if not opt then
-        return
-    end
-
-    if data.type == "Dropdown" then
-        local v = data.value
-        if data.mutli == true then
-            -- multi-select: table must not be empty
-            if #v > 0 then
-                opt:SetValue(v)
-            end
-        else
-            -- single-select: string must not be empty
-            if v ~= "" then
-                opt:SetValue(v)
-            end
-        end
-
-    else
-        -- all other types: set whatever value is provided
-        opt:SetValue(data.value)
-    end
-end,
+				if SaveManager.Options[idx] then 
+					SaveManager.Options[idx]:SetValue(data.value)
+				end
+			end,
 		},
 		Colorpicker = {
 			Save = function(idx, object)
@@ -5777,3 +5755,4 @@ else
 end
 
 return Library, SaveManager, InterfaceManager
+
