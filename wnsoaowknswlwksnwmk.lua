@@ -1,6 +1,6 @@
 
 
---V4
+--V1
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5248,91 +5248,115 @@ if RunService:IsStudio() then
 end
 
 local SaveManager = {} do
-	SaveManager.Folder = "FluentSettings"
-	SaveManager.Ignore = {}
-	SaveManager.Parser = {
-		Toggle = {
-			Save = function(idx, object) 
-				return { type = "Toggle", idx = idx, value = object.Value } 
-			end,
-			Load = function(idx, data)
-				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
-				end
-			end,
-		},
-		Slider = {
-			Save = function(idx, object)
-				return { type = "Slider", idx = idx, value = tostring(object.Value) }
-			end,
-			Load = function(idx, data)
-				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(tonumber(data.value))
-				end
-			end,
-		},
-		Dropdown = {
-			Save = function(idx, object)
-				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
-			end,
-			Load = function(idx, data)
-    local opt = SaveManager.Options[idx]
-    if not opt then
-        return
-    end
+    SaveManager.Folder = "FluentSettings"
+    SaveManager.Ignore = {}
+    SaveManager.Options = {}  -- pastikan ini diinisialisasi di tempat lain
 
-    local v = data.value
+    SaveManager.Parser = {
+        Toggle = {
+            Save = function(idx, object)
+                return { type = "Toggle", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if opt then
+                    opt:SetValue(data.value)
+                end
+            end,
+        },
 
-    if data.mutli == true then
-        -- multi-select dropdown: value is a table
-        if #v > 0 then
-            opt:SetValue(v)
-        end
+        Slider = {
+            Save = function(idx, object)
+                -- simpan sebagai number, bukan string
+                return { type = "Slider", idx = idx, value = object.Value }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if not opt then return end
 
-    elseif data.mutli == false then
-        -- single-select dropdown: value is a string
-        if v ~= "" then
-            opt:SetValue(v)
-        end
+                -- pastikan value selalu number
+                local num = tonumber(data.value) or 0
+                opt:SetValue(num)
+            end,
+        },
 
-    else
-        -- semua tipe lain: langsung set apa pun valuenya
-        opt:SetValue(v)
-    end
-end,
-		},
-		Colorpicker = {
-			Save = function(idx, object)
-				return { type = "Colorpicker", idx = idx, value = object.Value:ToHex(), transparency = object.Transparency }
-			end,
-			Load = function(idx, data)
-				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
-				end
-			end,
-		},
-		Keybind = {
-			Save = function(idx, object)
-				return { type = "Keybind", idx = idx, mode = object.Mode, key = object.Value }
-			end,
-			Load = function(idx, data)
-				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.key, data.mode)
-				end
-			end,
-		},
+        Dropdown = {
+            Save = function(idx, object)
+                return {
+                    type  = "Dropdown",
+                    idx   = idx,
+                    value = object.Value,
+                    mutli = object.Multi,
+                }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if not opt then return end
 
-		Input = {
-			Save = function(idx, object)
-				return { type = "Input", idx = idx, text = object.Value }
-			end,
-			Load = function(idx, data)
-				if SaveManager.Options[idx] and type(data.text) == "string" then
-					SaveManager.Options[idx]:SetValue(data.text)
-				end
-			end,
-		},
-	}
+                local v = data.value
+                if data.mutli then
+                    -- multi-select: table harus ada dan tidak kosong
+                    if v and #v > 0 then
+                        opt:SetValue(v)
+                    end
+                else
+                    -- single-select: string harus bukan ""
+                    if v and v ~= "" then
+                        opt:SetValue(v)
+                    end
+                end
+            end,
+        },
+
+        Colorpicker = {
+            Save = function(idx, object)
+                return {
+                    type         = "Colorpicker",
+                    idx          = idx,
+                    value        = object.Value:ToHex(),
+                    transparency = object.Transparency,
+                }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if opt then
+                    opt:SetValueRGB(
+                        Color3.fromHex(data.value),
+                        data.transparency
+                    )
+                end
+            end,
+        },
+
+        Keybind = {
+            Save = function(idx, object)
+                return {
+                    type = "Keybind",
+                    idx  = idx,
+                    mode = object.Mode,
+                    key  = object.Value,
+                }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if opt then
+                    opt:SetValue(data.key, data.mode)
+                end
+            end,
+        },
+
+        Input = {
+            Save = function(idx, object)
+                return { type = "Input", idx = idx, text = object.Value }
+            end,
+            Load = function(idx, data)
+                local opt = SaveManager.Options[idx]
+                if opt and data.text ~= nil then
+                    opt:SetValue(data.text)
+                end
+            end,
+        },
+    }
 
 	function SaveManager:SetIgnoreIndexes(list)
 		for _, key in next, list do
