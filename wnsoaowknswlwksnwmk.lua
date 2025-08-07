@@ -1,6 +1,6 @@
 
 
---V1
+--V2
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5276,7 +5276,7 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-				Load = function(idx, data)
+				
     local v = data.value
 
     -- skip if value is nil
