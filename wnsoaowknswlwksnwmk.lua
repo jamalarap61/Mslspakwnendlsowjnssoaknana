@@ -1,3 +1,5 @@
+--Capek
+
 
 
 --V1
@@ -5275,22 +5277,13 @@ local SaveManager = {} do
 			Save = function(idx, object)
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
-			Load = function(idx, datas)
-	local opt = SaveManager.Options[idx]
-
-	if datas.mutli == true then
-	if typeof(datas.value) == "table" and #datas.value > 0 then
-		-- data.value berisi array/table
-		opt:SetValue(datas.value)
-		print("Dropdown Table") 
-	end
-elseif datas.mutli == false then
-	if typeof(datas.value) == "string" and datas.value ~= "" then
-		-- data.value berisi string
-		opt:SetValue(datas.value)
-		print("Dropdown string") 
-	end
-end, 
+			Load = function(idx, data)
+				if SaveManager.Options[idx] and type(data.value) == "table" and #data.value > 0 then 
+					SaveManager.Options[idx]:SetValue(data.value)
+			    elseif SaveManager.Options[idx] and type(data.value) == "string" and data.value ~= "" then 
+			        SaveManager.Options[idx]:SetValue(data.value)
+				end
+			end,
 		},
 		Colorpicker = {
 			Save = function(idx, object)
