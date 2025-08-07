@@ -1,6 +1,6 @@
 
 
---V2
+--V3
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
