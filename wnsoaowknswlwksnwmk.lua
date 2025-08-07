@@ -1,6 +1,6 @@
 
 
---V2
+--V3
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5276,27 +5276,28 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-				
+    local opt = SaveManager.Options[idx]
+    if not opt then
+        return
+    end
+
     local v = data.value
 
-    -- skip if value is nil
-    if v == nil then
-        return
-    end
+    if data.mutli == true then
+        -- multi-select dropdown: value is a table
+        if #v > 0 then
+            opt:SetValue(v)
+        end
 
-    -- skip if empty string
-    if type(v) == "string" and v == "" then
-        return
-    end
+    elseif data.mutli == false then
+        -- single-select dropdown: value is a string
+        if v ~= "" then
+            opt:SetValue(v)
+        end
 
-    -- skip if empty table
-    if type(v) == "table" and #v == 0 then
-        return
-    end
-
-    -- process only valid values
-    if SaveManager.Options[idx] then
-        SaveManager.Options[idx]:SetValue(v)
+    else
+        -- semua tipe lain: langsung set apa pun valuenya
+        opt:SetValue(v)
     end
 end,
 		},
