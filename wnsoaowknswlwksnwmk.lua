@@ -1,5 +1,4 @@
---chg
-
+--7777
 
 
 --V1
@@ -5278,9 +5277,9 @@ local SaveManager = {} do
 				return { type = "Dropdown", idx = idx, value = object.Value, mutli = object.Multi }
 			end,
 			Load = function(idx, data)
-				Load = function(idx, data)
-    print("Load idx:", idx, "mutli:", data.mutli, "value:", data.value, "type:", typeof(data.value))
-end
+				if SaveManager.Options[idx] then 
+					SaveManager.Options[idx]:SetValue(data.value)
+				end
 			end,
 		},
 		Colorpicker = {
