@@ -1,6 +1,6 @@
 
 
---V10
+--V11
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5465,6 +5465,13 @@ for i = 1, #objects do
             local p = Parser[o.type]
             if p then p.Load(idx, o, true) end
         end
+    end
+end
+
+-- Call callbacks after load for each widget (this should include dropdowns, etc.)
+for idx, opt in pairs(Options) do
+    if opt and opt.OnChanged then
+        opt:OnChanged(opt.Callback)
     end
 end
 
