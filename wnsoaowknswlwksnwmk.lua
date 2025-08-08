@@ -1,6 +1,6 @@
 
 
---V9
+--V10
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -846,9 +846,12 @@ end
 
 -- Batch rebuild queue for heavy widgets (e.g., Dropdowns) after config load
 function Library:_queueDropdownRebuild(obj)
+    -- If we're deferring dropdown builds, do nothing now; build lazily on first open
+    if self._deferDropdownBuild then return end
     self._pendingDropdownRebuilds = self._pendingDropdownRebuilds or setmetatable({}, { __mode = "k" })
     self._pendingDropdownRebuilds[obj] = true
 end
+
 
 function Library:_postLoadRebuild()
     if not self._pendingDropdownRebuilds then return end
@@ -5416,34 +5419,63 @@ local SaveManager = {} do
 	
     function SaveManager:Load(name)
 		if (not name) then
-			return false, "no config file is selected"
-		end
+    return false, "no config file is selected"
+end
 
-		local file = name
-		if not isfile(file) then return false, "Create Config Save File" end
+local file = name
+if not isfile(file) then return false, "Create Config Save File" end
 
-		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-		if not success then return false, "decode error" end
+local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+if not ok then return false, "decode error" end
 
-        -- Gate heavy UI updates during load
-        Library._isLoading = true
+Library._isLoading = true
 
-		for _, option in next, decoded.objects do
-			local parser = self.Parser[option.type]
-			if parser and not self.Ignore[option.idx] then
-                -- Pass 'true' to SetValue methods to indicate silent mode
-				parser.Load(option.idx, option, true)
-			end
-		end
+local Options = self.Options
+local Parser = self.Parser
+local Ignore = self.Ignore
+local objects = decoded.objects
+if type(objects) ~= "table" then
+    Library._isLoading = false
+    return false, "invalid config format"
+end
 
-        Library._isLoading = false
-
-        -- Do one-time batch rebuild for widgets that deferred heavy work
-        if Library._postLoadRebuild then
-            pcall(function() Library:_postLoadRebuild() end)
+for i = 1, #objects do
+    local o = objects[i]
+    local idx = o.idx
+    if idx and not Ignore[idx] then
+        local opt = Options[idx]
+        if opt then
+            -- Cheap equality skip for common types
+            if o.type == "Toggle" then
+                if opt.Value ~= o.value then opt:SetValue(o.value, true) end
+            elseif o.type == "Slider" then
+                if tostring(opt.Value) ~= tostring(o.value) then opt:SetValue(o.value, true) end
+            elseif o.type == "Input" then
+                if tostring(opt.Value or "") ~= tostring(o.text or "") then opt:SetValue(o.text, true) end
+            elseif o.type == "Dropdown" then
+                -- Always apply; heavy work is deferred and no list build is queued when deferring
+                opt:SetValue(o.value, true)
+            elseif o.type == "Colorpicker" then
+                opt:SetValueRGB(Color3.fromHex(o.value), o.transparency, true)
+            elseif Parser[o.type] then
+                -- Fallback to existing parser for other/unknown types
+                Parser[o.type].Load(idx, o, true)
+            end
+        else
+            local p = Parser[o.type]
+            if p then p.Load(idx, o, true) end
         end
+    end
+end
 
-		return true
+Library._isLoading = false
+
+if Library._postLoadRebuild then
+    pcall(function() Library:_postLoadRebuild() end)
+end
+
+return true
+
 	end
 
 
