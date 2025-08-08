@@ -1,6 +1,6 @@
 
 
---V12
+--V3
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5321,7 +5321,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value, true)
+					SaveManager.Options[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -5331,7 +5331,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value, true)
+					SaveManager.Options[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -5341,7 +5341,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value, true)
+					SaveManager.Options[idx]:SetValue(data.value)
 				end
 			end,
 		},
@@ -5447,7 +5447,7 @@ for i = 1, #objects do
         if opt then
             -- Cheap equality skip for common types
             if o.type == "Toggle" then
-                if opt.Value ~= o.value then opt:SetValue(o.value, true) end
+                        opt:SetValue(o.value) end
             elseif o.type == "Slider" then
                 if tostring(opt.Value) ~= tostring(o.value) then opt:SetValue(o.value, true) end
             elseif o.type == "Input" then
@@ -5479,13 +5479,6 @@ Library._isLoading = false
 
 if Library._postLoadRebuild then
     pcall(function() Library:_postLoadRebuild() end)
-end
-
--- Repaint visuals to ensure ON/OFF state shows correctly without callbacks
-for idx, opt in pairs(Options) do
-    if opt and opt.SetValue and opt.Value ~= nil then
-        pcall(function() opt:SetValue(opt.Value, true) end)
-    end
 end
 
 -- Now trigger callbacks once per option (no animation)
