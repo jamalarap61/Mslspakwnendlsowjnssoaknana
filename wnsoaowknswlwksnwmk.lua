@@ -1,6 +1,7 @@
 
 
---V3
+
+--V4
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -2883,7 +2884,7 @@ ElementsTable.Dropdown = (function()
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
-			Dropdown.Value = {}
+			self.Value = {}
 		end
 
 		local DropdownFrame = Components.Element(Config.Title, Config.Description, self.Container, false, Config)
@@ -2969,21 +2970,21 @@ ElementsTable.Dropdown = (function()
 
 
             -- Create persistent search bar
-            Dropdown.SearchBar = Instance.new("TextBox")
-            Dropdown.SearchBar.Size = UDim2.new(1, -10, 0, 28)
-            Dropdown.SearchBar.Position = UDim2.new(0, 0, 0, 0)
-            Dropdown.SearchBar.PlaceholderText = "Search..."
-            Dropdown.SearchBar.Text = ""
-            Dropdown.SearchBar.BackgroundColor3 = Themes.LimitHub.DropdownHolder
-            Dropdown.SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-            Dropdown.SearchBar.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
-            Dropdown.SearchBar.BorderSizePixel = 0
-            Dropdown.SearchBar.ClearTextOnFocus = false
-            Dropdown.SearchBar.MultiLine = false
-            Dropdown.SearchBar.Selectable = true
-            Dropdown.SearchBar.TextEditable = true
-            Dropdown.SearchBar.ZIndex = 10
-            Dropdown.SearchBar.Parent = DropdownScrollFrame
+            self.SearchBar = Instance.new("TextBox")
+            self.SearchBar.Size = UDim2.new(1, -10, 0, 28)
+            self.SearchBar.Position = UDim2.new(0, 0, 0, 0)
+            self.SearchBar.PlaceholderText = "Search..."
+            self.SearchBar.Text = ""
+            self.SearchBar.BackgroundColor3 = Themes.LimitHub.DropdownHolder
+            self.SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+            self.SearchBar.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
+            self.SearchBar.BorderSizePixel = 0
+            self.SearchBar.ClearTextOnFocus = false
+            self.SearchBar.MultiLine = false
+            self.SearchBar.Selectable = true
+            self.SearchBar.TextEditable = true
+            self.SearchBar.ZIndex = 10
+            self.SearchBar.Parent = DropdownScrollFrame
 
             -- Padding so list starts below search bar
             local padding = Instance.new("UIPadding")
@@ -2993,8 +2994,8 @@ ElementsTable.Dropdown = (function()
             
             -- Filtering function
             local function applyFilter()
-                if not Dropdown or not Dropdown.SearchBar or not DropdownScrollFrame then return end
-                local query = string.lower(Dropdown.SearchBar.Text or "")
+                if not Dropdown or not self.SearchBar or not DropdownScrollFrame then return end
+                local query = string.lower(self.SearchBar.Text or "")
 
                 for _, element in ipairs(DropdownScrollFrame:GetChildren()) do
                     if element:IsA("TextButton") then
@@ -3023,11 +3024,11 @@ ElementsTable.Dropdown = (function()
             end
 
             -- Ensure filter updates when typing in SearchBar (attach after creation)
-            if Dropdown and Dropdown.SearchBar then
-                Dropdown.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
+            if Dropdown and self.SearchBar then
+                self.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
             end
 
-            Dropdown.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
+            self.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
     		local DropdownHolderFrame = New("Frame", {
 			Size = UDim2.fromScale(1, 0.6),
 			ThemeTag = {
@@ -3083,7 +3084,7 @@ ElementsTable.Dropdown = (function()
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
-			if #Dropdown.Values > 10 then
+			if #self.Values > 10 then
 				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
 			else
 				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
@@ -3140,18 +3141,18 @@ ElementsTable.Dropdown = (function()
 		end
 
 		function Dropdown:Display()
-			local Values = Dropdown.Values
+			local Values = self.Values
 			local Str = ""
 
 			if Config.Multi then
 				for Idx, Value in next, Values do
-					if Dropdown.Value[Value] then
+					if self.Value[Value] then
 						Str = Str .. Value .. ", "
 					end
 				end
 				Str = Str:sub(1, #Str - 2)
 			else
-				Str = Dropdown.Value or ""
+				Str = self.Value or ""
 			end
 
 			DropdownDisplay.Text = (Str == "" and "--" or Str)
@@ -3161,13 +3162,13 @@ ElementsTable.Dropdown = (function()
 			if Config.Multi then
 				local T = {}
 
-				for Value, Bool in next, Dropdown.Value do
+				for Value, Bool in next, self.Value do
 					table.insert(T, Value)
 				end
 
 				return T
 			else
-				return Dropdown.Value and 1 or 0
+				return self.Value and 1 or 0
 			end
 		end
 
@@ -3176,12 +3177,12 @@ ElementsTable.Dropdown = (function()
         table.insert(Library._pendingDropdowns, self)
         return
     end
-			local Values = Dropdown.Values
+			local Values = self.Values
 			local Buttons = {}
 
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
                 if not Element:IsA("UIListLayout") 
-                   and Element ~= Dropdown.SearchBar 
+                   and Element ~= self.SearchBar 
                    and not Element:IsA("UIPadding") then
                     Element:Destroy()
                 end
@@ -3245,9 +3246,9 @@ ElementsTable.Dropdown = (function()
 				local Selected
 
 				if Config.Multi then
-					Selected = Dropdown.Value[Value]
+					Selected = self.Value[Value]
 				else
-					Selected = Dropdown.Value == Value
+					Selected = self.Value == Value
 				end
 
 				local BackMotor, SetBackTransparency = Creator.SpringMotor(1, Button, "BackgroundTransparency")
@@ -3273,12 +3274,12 @@ ElementsTable.Dropdown = (function()
 
 				function Table:UpdateButton()
 					if Config.Multi then
-						Selected = Dropdown.Value[Value]
+						Selected = self.Value[Value]
 						if Selected then
 							SetBackTransparency(0.89)
 						end
 					else
-						Selected = Dropdown.Value == Value
+						Selected = self.Value == Value
 						SetBackTransparency(Selected and 0.89 or 1)
 					end
 
@@ -3297,10 +3298,10 @@ ElementsTable.Dropdown = (function()
 						else
 							if Config.Multi then
 								Selected = Try
-								Dropdown.Value[Value] = Selected and true or nil
+								self.Value[Value] = Selected and true or nil
 							else
 								Selected = Try
-								Dropdown.Value = Selected and Value or nil
+								self.Value = Selected and Value or nil
 
 								for _, OtherButton in next, Buttons do
 									OtherButton:UpdateButton()
@@ -3310,8 +3311,8 @@ ElementsTable.Dropdown = (function()
 							Table:UpdateButton()
 							Dropdown:Display()
 
-							Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-							Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+							Library:SafeCallback(Dropdown.Callback, self.Value)
+							Library:SafeCallback(Dropdown.Changed, self.Value)
 						end
 					end
 				end)
@@ -3338,7 +3339,7 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:SetValues(NewValues)
 			if NewValues then
-				Dropdown.Values = NewValues
+				self.Values = NewValues
 			end
 
 			Dropdown:BuildDropdownList()
@@ -3346,7 +3347,7 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:OnChanged(Func)
 			Dropdown.Changed = Func
-			Func(Dropdown.Value)
+			Func(self.Value)
 		end
 
 		function Dropdown:SetValue(Val)
@@ -3354,24 +3355,24 @@ ElementsTable.Dropdown = (function()
 				local nTable = {}
 
 				for Value, Bool in next, Val do
-					if table.find(Dropdown.Values, Value) then
+					if table.find(self.Values, Value) then
 						nTable[Value] = true
 					end
 				end
 
-				Dropdown.Value = nTable
+				self.Value = nTable
 			else
 				if not Val then
-					Dropdown.Value = nil
-				elseif table.find(Dropdown.Values, Val) then
-					Dropdown.Value = Val
+					self.Value = nil
+				elseif table.find(self.Values, Val) then
+					self.Value = Val
 				end
 			end
 
 			Dropdown:BuildDropdownList()
 
-			Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
-			Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+			Library:SafeCallback(Dropdown.Callback, self.Value)
+			Library:SafeCallback(Dropdown.Changed, self.Value)
 		end
 
 		function Dropdown:Destroy()
@@ -3385,18 +3386,18 @@ ElementsTable.Dropdown = (function()
 		local Defaults = {}
 
 		if type(Config.Default) == "string" then
-			local Idx = table.find(Dropdown.Values, Config.Default)
+			local Idx = table.find(self.Values, Config.Default)
 			if Idx then
 				table.insert(Defaults, Idx)
 			end
 		elseif type(Config.Default) == "table" then
 			for _, Value in next, Config.Default do
-				local Idx = table.find(Dropdown.Values, Value)
+				local Idx = table.find(self.Values, Value)
 				if Idx then
 					table.insert(Defaults, Idx)
 				end
 			end
-		elseif type(Config.Default) == "number" and Dropdown.Values[Config.Default] ~= nil then
+		elseif type(Config.Default) == "number" and self.Values[Config.Default] ~= nil then
 			table.insert(Defaults, Config.Default)
 		end
 
@@ -3404,9 +3405,9 @@ ElementsTable.Dropdown = (function()
 			for i = 1, #Defaults do
 				local Index = Defaults[i]
 				if Config.Multi then
-					Dropdown.Value[Dropdown.Values[Index]] = true
+					self.Value[self.Values[Index]] = true
 				else
-					Dropdown.Value = Dropdown.Values[Index]
+					self.Value = self.Values[Index]
 				end
 
 				if not Config.Multi then
@@ -5400,10 +5401,6 @@ local SaveManager = {} do
     return true
 end
 
-		end
-
-		return true
-	end
 
 	function SaveManager:IgnoreThemeSettings()
 		self:SetIgnoreIndexes({ 
