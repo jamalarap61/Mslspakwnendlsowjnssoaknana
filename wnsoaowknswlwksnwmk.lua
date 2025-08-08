@@ -1,6 +1,6 @@
 
 
---V3
+--V16
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -2848,7 +2848,7 @@ ElementsTable.Toggle = (function()
 			Value = not not Value
 			Toggle.Value = Value
 
-			local __suppress = (silent or (Library and Library._isLoading))
+			local __suppress = (silent)
 
 			Creator.OverrideTag(ToggleBorder, { Color = Toggle.Value and "Accent" or "ToggleSlider" })
 			Creator.OverrideTag(ToggleCircle, { ImageColor3 = Toggle.Value and "ToggleToggled" or "ToggleSlider" })
@@ -5331,7 +5331,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(data.value, true)
 				end
 			end,
 		},
@@ -5341,7 +5341,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(data.value, true)
 				end
 			end,
 		},
@@ -5447,7 +5447,7 @@ for i = 1, #objects do
         if opt then
             -- Cheap equality skip for common types
             if o.type == "Toggle" then
-                        opt:SetValue(o.value) end
+                if opt.Value ~= o.value then opt:SetValue(o.value) end
             elseif o.type == "Slider" then
                 if tostring(opt.Value) ~= tostring(o.value) then opt:SetValue(o.value, true) end
             elseif o.type == "Input" then
@@ -5481,16 +5481,7 @@ if Library._postLoadRebuild then
     pcall(function() Library:_postLoadRebuild() end)
 end
 
--- Now trigger callbacks once per option (no animation)
-for idx, opt in pairs(Options) do
-    if opt then
-        if opt.Callback then pcall(function() opt.Callback(opt.Value) end) end
-        if opt.Changed then pcall(function() opt.Changed(opt.Value) end) end
-    end
-end
-
 return true
-
 
 	end
 
