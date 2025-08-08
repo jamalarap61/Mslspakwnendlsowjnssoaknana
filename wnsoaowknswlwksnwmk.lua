@@ -1,6 +1,6 @@
 
 
---V2
+--V3
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -73,21 +73,9 @@ local Themes = {
         HoverChange = 0.08
     }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 local Library = {
-    -- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-    Library._isLoading = false
-    Library._pendingDropdowns = {}
 	Version = "4.0.0",
 
 	OpenFrames = {},
@@ -288,10 +276,6 @@ function Linear:step(state, dt)
 		velocity = velocity,
 	}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 end
 
 local Instant = {}
@@ -308,10 +292,6 @@ function Instant:step()
 		complete = true,
 		value = self._targetValue,
 	}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
 
 end
 
@@ -420,10 +400,6 @@ function Spring:step(state, dt)
 		velocity = v1,
 	}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 end
 
 local noop = function() end
@@ -496,11 +472,6 @@ function SingleMotor.new(initialValue, useImplicitConnections)
 		complete = true,
 		value = initialValue,
 	}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 	return self
 end
@@ -660,11 +631,6 @@ local Flipper = {
 	isMotor = isMotor,
 }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 local Creator = {
 	Registry = {},
 	Signals = {},
@@ -730,11 +696,6 @@ local Creator = {
 	},
 }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 local function ApplyCustomProps(Object, Props)
 	if Props.ThemeTag then
 		Creator.AddThemeObject(Object, Props.ThemeTag)
@@ -775,11 +736,6 @@ function Creator.AddThemeObject(Object, Properties)
 		Properties = Properties,
 		Idx = Idx,
 	}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 	Creator.Registry[Object] = Data
 	Creator.UpdateTheme()
@@ -948,10 +904,6 @@ function AcrylicBlur()
 			topRight = Vector2.new(),
 			bottomRight = Vector2.new(),
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
 
 		local model = createAcrylic()
 		model.Parent = BlurFolder
@@ -1183,11 +1135,6 @@ local Acrylic = {
 	AcrylicPaint = AcrylicPaint(),
 }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 function Acrylic.init()
 	local baseEffect = Instance.new("DepthOfFieldEffect")
 	baseEffect.FarIntensity = 0
@@ -1240,11 +1187,6 @@ local Components = {
 		Restore = "rbxassetid://9886659001",
 	},
 }
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 Components.Element = (function()
 	local New = Creator.New
@@ -1531,11 +1473,6 @@ Components.Tab = (function()
 		TabCount = 0,
 	}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 	function TabModule:Init(Window)
 		TabModule.Window = Window
 		return TabModule
@@ -1560,11 +1497,6 @@ Library._pendingDropdowns = {}
 			Name = Title,
 			Type = "Tab",
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		if Library:GetIcon(Icon) then
 			Icon = Library:GetIcon(Icon)
@@ -1808,11 +1740,6 @@ Components.Dialog = (function()
 		Window = nil,
 	}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 	function Dialog:Init(Window)
 		Dialog.Window = Window
 		return Dialog
@@ -1822,11 +1749,6 @@ Library._pendingDropdowns = {}
 		local NewDialog = {
 			Buttons = 0,
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		NewDialog.TintFrame = New("TextButton", {
 			Text = "",
@@ -2004,11 +1926,6 @@ Components.Notification = (function()
 		local NewNotification = {
 			Closed = false,
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		NewNotification.AcrylicPaint = Acrylic.AcrylicPaint()
 
@@ -2305,11 +2222,6 @@ Components.TitleBar = (function()
 				Callback = Callback or function() end,
 			}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 			Button.Frame = New("TextButton", {
 				Size = UDim2.new(0, 34, 1, -8),
 				AnchorPoint = Vector2.new(1, 0),
@@ -2473,11 +2385,6 @@ Components.Window = (function()
 				Camera.ViewportSize.Y / 2 - Config.Size.Y.Offset / 2
 			),
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		local Dragging, DragInput, MousePos, StartPos = false
 		local Resizing, ResizePos = false
@@ -2871,11 +2778,6 @@ ElementsTable.Toggle = (function()
 			Type = "Toggle",
 		}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 		local ToggleFrame = Components.Element(Config.Title, Config.Description, self.Container, true, Config)
 		ToggleFrame.DescLabel.Size = UDim2.new(1, -54, 0, 14)
 
@@ -2979,11 +2881,6 @@ ElementsTable.Dropdown = (function()
 			Type = "Dropdown",
 			Callback = Config.Callback or function() end,
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		if Dropdown.Multi and Config.AllowNull then
 			Dropdown.Value = {}
@@ -3571,11 +3468,6 @@ ElementsTable.Slider = (function()
 			Type = "Slider",
 		}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 		local Dragging = false
 
 		local SliderFrame = Components.Element(Config.Title, Config.Description, self.Container, false, Config)
@@ -3729,11 +3621,6 @@ ElementsTable.Keybind = (function()
 			Callback = Config.Callback or function(Value) end,
 			ChangedCallback = Config.ChangedCallback or function(New) end,
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		local Picking = false
 
@@ -3933,11 +3820,6 @@ ElementsTable.Colorpicker = (function()
 			Title = type(Config.Title) == "string" and Config.Title or "Colorpicker",
 			Callback = Config.Callback or function(Color) end,
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		function Colorpicker:SetHSVFromRGB(Color)
 			local H, S, V = Color3.toHSV(Color)
@@ -4438,11 +4320,6 @@ ElementsTable.Input = (function()
 			Callback = Config.Callback or function(Value) end,
 			Type = "Input",
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		local InputFrame = Components.Element(Config.Title, Config.Description, self.Container, false)
 
@@ -5340,10 +5217,6 @@ local Icons = {
 	["lucide-webhook"] = "rbxassetid://17320556264",
 }
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 function Library:GetIcon(Name)
 	if Name ~= nil then
 		if string.find(Name, "rbxassetid://") then
@@ -5456,11 +5329,6 @@ local SaveManager = {} do
 		},
 	}
 
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
-
 	function SaveManager:SetIgnoreIndexes(list)
 		for _, key in next, list do
 			self.Ignore[key] = true
@@ -5482,11 +5350,6 @@ Library._pendingDropdowns = {}
 		local data = {
 			objects = {}
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		for idx, option in next, SaveManager.Options do
 			if not self.Parser[option.Type] then continue end
@@ -5553,11 +5416,6 @@ end
 			self.Folder,
 			self.Folder .. "/"
 		}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 		for i = 1, #paths do
 			local str = paths[i]
@@ -5745,11 +5603,6 @@ local InterfaceManager = {} do
 		Transparency = true,
 		MenuKeybind = "K"
 	}
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 	function InterfaceManager:SetTheme(name)
 		InterfaceManager.Settings.Theme = name
