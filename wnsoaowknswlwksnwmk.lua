@@ -1,6 +1,6 @@
 
 
---V11
+--V12
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5481,7 +5481,23 @@ if Library._postLoadRebuild then
     pcall(function() Library:_postLoadRebuild() end)
 end
 
+-- Repaint visuals to ensure ON/OFF state shows correctly without callbacks
+for idx, opt in pairs(Options) do
+    if opt and opt.SetValue and opt.Value ~= nil then
+        pcall(function() opt:SetValue(opt.Value, true) end)
+    end
+end
+
+-- Now trigger callbacks once per option (no animation)
+for idx, opt in pairs(Options) do
+    if opt then
+        if opt.Callback then pcall(function() opt.Callback(opt.Value) end) end
+        if opt.Changed then pcall(function() opt.Changed(opt.Value) end) end
+    end
+end
+
 return true
+
 
 	end
 
