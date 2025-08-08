@@ -1,4 +1,3 @@
---New
 
 
 --V1
@@ -76,6 +75,9 @@ local Themes = {
 }
 
 local Library = {
+    -- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
+    Library._isLoading = false
+    Library._pendingDropdowns = {}
 	Version = "4.0.0",
 
 	OpenFrames = {},
@@ -3163,6 +3165,10 @@ ElementsTable.Dropdown = (function()
 		end
 
 		function Dropdown:BuildDropdownList()
+    if Library._isLoading then
+        table.insert(Library._pendingDropdowns, self)
+        return
+    end
 			local Values = Dropdown.Values
 			local Buttons = {}
 
@@ -5354,9 +5360,37 @@ local SaveManager = {} do
 	end
 
 	function SaveManager:Load(name)
-		if (not name) then
-			return false, "no config file is selected"
-		end
+    if not name then
+        return false, "no config file is selected"
+    end
+    if not isfile(name) then
+        return false, "Create Config Save File"
+    end
+
+    local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(name))
+    if not ok then
+        return false, "decode error"
+    end
+
+    -- ▶️ START batch loading (skip tween/rebuild)
+    Library._isLoading = true
+
+    for _, option in next, decoded.objects do
+        if self.Parser[option.type] and not self.Ignore[option.idx] then
+            self.Parser[option.type].Load(option.idx, option)
+        end
+    end
+
+    -- ▶️ END batch loading, rebuild dropdowns
+    Library._isLoading = false
+
+    for _, dd in ipairs(Library._pendingDropdowns) do
+        dd:BuildDropdownList()
+    end
+    Library._pendingDropdowns = {}
+
+    return true
+end
 
 		local file = name
 		if not isfile(file) then return false, "Create Config Save File" end
