@@ -1,6 +1,6 @@
 
 
---V6
+--V7
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -72,10 +72,13 @@ local Themes = {
         Hover = Color3.fromRGB(140, 0, 230),
         HoverChange = 0.08
     }
-
 }
 
 local Library = {
+
+_isLoading = false,
+_pendingDropdownRebuilds = setmetatable({}, { __mode = "k" }),
+_deferDropdownBuild = true,
 	Version = "4.0.0",
 
 	OpenFrames = {},
@@ -95,11 +98,6 @@ local Library = {
 	MinimizeKeybind = nil,
 	MinimizeKey = Enum.KeyCode.LeftControl,
 }
-
--- ▶️ AUTO-OPTIMIZE: Skip heavy UI updates during LoadConfig
-Library._isLoading = false
-Library._pendingDropdowns = {}
-
 
 do 
 	local GUI = game:GetService("CoreGui"):FindFirstChild("OpenClose")
@@ -275,7 +273,6 @@ function Linear:step(state, dt)
 		value = position,
 		velocity = velocity,
 	}
-
 end
 
 local Instant = {}
@@ -292,7 +289,6 @@ function Instant:step()
 		complete = true,
 		value = self._targetValue,
 	}
-
 end
 
 local VELOCITY_THRESHOLD = 0.001
@@ -399,7 +395,6 @@ function Spring:step(state, dt)
 		value = complete and g or p1,
 		velocity = v1,
 	}
-
 end
 
 local noop = function() end
@@ -847,6 +842,27 @@ function Library:SafeCallback(Function, ...)
 	end
 end
 
+
+
+-- Batch rebuild queue for heavy widgets (e.g., Dropdowns) after config load
+function Library:_queueDropdownRebuild(obj)
+    self._pendingDropdownRebuilds = self._pendingDropdownRebuilds or setmetatable({}, { __mode = "k" })
+    self._pendingDropdownRebuilds[obj] = true
+end
+
+function Library:_postLoadRebuild()
+    if not self._pendingDropdownRebuilds then return end
+    for obj, _ in pairs(self._pendingDropdownRebuilds) do
+        if obj and obj.BuildDropdownList then
+            pcall(function() obj:BuildDropdownList() end)
+        end
+        if obj and obj.Display then
+            pcall(function() obj:Display() end)
+        end
+    end
+    self._pendingDropdownRebuilds = setmetatable({}, { __mode = "k" })
+end
+
 function Library:Round(Number, Factor)
 	if Factor == 0 then
 		return math.floor(Number)
@@ -904,7 +920,6 @@ function AcrylicBlur()
 			topRight = Vector2.new(),
 			bottomRight = Vector2.new(),
 		}
-
 		local model = createAcrylic()
 		model.Parent = BlurFolder
 
@@ -2826,26 +2841,39 @@ ElementsTable.Toggle = (function()
 			Func(Toggle.Value)
 		end
 
-		function Toggle:SetValue(Value)
+		function Toggle:SetValue(Value, silent)
 			Value = not not Value
 			Toggle.Value = Value
 
+			local __suppress = (silent or (Library and Library._isLoading))
+
 			Creator.OverrideTag(ToggleBorder, { Color = Toggle.Value and "Accent" or "ToggleSlider" })
 			Creator.OverrideTag(ToggleCircle, { ImageColor3 = Toggle.Value and "ToggleToggled" or "ToggleSlider" })
-			TweenService:Create(
-				ToggleCircle,
-				TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-				{ Position = UDim2.new(0, Toggle.Value and 19 or 2, 0.5, 0) }
-			):Play()
-			TweenService:Create(
-				ToggleSlider,
-				TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
-				{ BackgroundTransparency = Toggle.Value and 0.45 or 1 }
-			):Play()
-			ToggleCircle.ImageTransparency = Toggle.Value and 0 or 0.5
 
-			Library:SafeCallback(Toggle.Callback, Toggle.Value)
-			Library:SafeCallback(Toggle.Changed, Toggle.Value)
+			if __suppress then
+				ToggleCircle.Position = UDim2.new(0, Toggle.Value and 19 or 2, 0.5, 0)
+				ToggleSlider.BackgroundTransparency = Toggle.Value and 0.45 or 1
+				ToggleCircle.ImageTransparency = Toggle.Value and 0 or 0.5
+			else
+				TweenService:Create(
+					ToggleCircle,
+					TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+					{ Position = UDim2.new(0, Toggle.Value and 19 or 2, 0.5, 0) }
+				):Play()
+				TweenService:Create(
+					ToggleSlider,
+					TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+					{ BackgroundTransparency = Toggle.Value and 0.45 or 1 }
+				):Play()
+				ToggleCircle.ImageTransparency = Toggle.Value and 0 or 0.5
+			end
+
+			if not __suppress then
+				Library:SafeCallback(Toggle.Callback, Toggle.Value)
+				Library:SafeCallback(Toggle.Changed, Toggle.Value)
+			end
+		end
+			end
 		end
 
 		function Toggle:Destroy()
@@ -2883,7 +2911,7 @@ ElementsTable.Dropdown = (function()
 		}
 
 		if Dropdown.Multi and Config.AllowNull then
-			self.Value = {}
+			Dropdown.Value = {}
 		end
 
 		local DropdownFrame = Components.Element(Config.Title, Config.Description, self.Container, false, Config)
@@ -2969,21 +2997,21 @@ ElementsTable.Dropdown = (function()
 
 
             -- Create persistent search bar
-            self.SearchBar = Instance.new("TextBox")
-            self.SearchBar.Size = UDim2.new(1, -10, 0, 28)
-            self.SearchBar.Position = UDim2.new(0, 0, 0, 0)
-            self.SearchBar.PlaceholderText = "Search..."
-            self.SearchBar.Text = ""
-            self.SearchBar.BackgroundColor3 = Themes.LimitHub.DropdownHolder
-            self.SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
-            self.SearchBar.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
-            self.SearchBar.BorderSizePixel = 0
-            self.SearchBar.ClearTextOnFocus = false
-            self.SearchBar.MultiLine = false
-            self.SearchBar.Selectable = true
-            self.SearchBar.TextEditable = true
-            self.SearchBar.ZIndex = 10
-            self.SearchBar.Parent = DropdownScrollFrame
+            Dropdown.SearchBar = Instance.new("TextBox")
+            Dropdown.SearchBar.Size = UDim2.new(1, -10, 0, 28)
+            Dropdown.SearchBar.Position = UDim2.new(0, 0, 0, 0)
+            Dropdown.SearchBar.PlaceholderText = "Search..."
+            Dropdown.SearchBar.Text = ""
+            Dropdown.SearchBar.BackgroundColor3 = Themes.LimitHub.DropdownHolder
+            Dropdown.SearchBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+            Dropdown.SearchBar.PlaceholderColor3 = Color3.fromRGB(200, 200, 200)
+            Dropdown.SearchBar.BorderSizePixel = 0
+            Dropdown.SearchBar.ClearTextOnFocus = false
+            Dropdown.SearchBar.MultiLine = false
+            Dropdown.SearchBar.Selectable = true
+            Dropdown.SearchBar.TextEditable = true
+            Dropdown.SearchBar.ZIndex = 10
+            Dropdown.SearchBar.Parent = DropdownScrollFrame
 
             -- Padding so list starts below search bar
             local padding = Instance.new("UIPadding")
@@ -2993,8 +3021,8 @@ ElementsTable.Dropdown = (function()
             
             -- Filtering function
             local function applyFilter()
-                if not Dropdown or not self.SearchBar or not DropdownScrollFrame then return end
-                local query = string.lower(self.SearchBar.Text or "")
+                if not Dropdown or not Dropdown.SearchBar or not DropdownScrollFrame then return end
+                local query = string.lower(Dropdown.SearchBar.Text or "")
 
                 for _, element in ipairs(DropdownScrollFrame:GetChildren()) do
                     if element:IsA("TextButton") then
@@ -3023,11 +3051,11 @@ ElementsTable.Dropdown = (function()
             end
 
             -- Ensure filter updates when typing in SearchBar (attach after creation)
-            if Dropdown and self.SearchBar then
-                self.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
+            if Dropdown and Dropdown.SearchBar then
+                Dropdown.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
             end
 
-            self.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
+            Dropdown.SearchBar:GetPropertyChangedSignal("Text"):Connect(applyFilter)
     		local DropdownHolderFrame = New("Frame", {
 			Size = UDim2.fromScale(1, 0.6),
 			ThemeTag = {
@@ -3083,14 +3111,11 @@ ElementsTable.Dropdown = (function()
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
-		    if type(self.Values) ~= "table" then return end
-		    local count = #self.Values
-		    if count > 10 then
-		        DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
-		    else
-		        DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
-		    end
-		end
+			if #Dropdown.Values > 10 then
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
+			else
+				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
+			end
 		end
 
 		local function RecalculateCanvasSize()
@@ -3125,6 +3150,7 @@ ElementsTable.Dropdown = (function()
 
 		local ScrollFrame = self.ScrollFrame
 		function Dropdown:Open()
+			if not Dropdown._listBuilt then Dropdown:BuildDropdownList(); Dropdown._listBuilt = true end
 			Dropdown.Opened = true
 			ScrollFrame.ScrollingEnabled = false
 			DropdownHolderCanvas.Visible = true
@@ -3143,18 +3169,18 @@ ElementsTable.Dropdown = (function()
 		end
 
 		function Dropdown:Display()
-			local Values = self.Values
+			local Values = Dropdown.Values
 			local Str = ""
 
 			if Config.Multi then
 				for Idx, Value in next, Values do
-					if self.Value[Value] then
+					if Dropdown.Value[Value] then
 						Str = Str .. Value .. ", "
 					end
 				end
 				Str = Str:sub(1, #Str - 2)
 			else
-				Str = self.Value or ""
+				Str = Dropdown.Value or ""
 			end
 
 			DropdownDisplay.Text = (Str == "" and "--" or Str)
@@ -3164,27 +3190,23 @@ ElementsTable.Dropdown = (function()
 			if Config.Multi then
 				local T = {}
 
-				for Value, Bool in next, self.Value do
+				for Value, Bool in next, Dropdown.Value do
 					table.insert(T, Value)
 				end
 
 				return T
 			else
-				return self.Value and 1 or 0
+				return Dropdown.Value and 1 or 0
 			end
 		end
 
 		function Dropdown:BuildDropdownList()
-    if Library._isLoading then
-        table.insert(Library._pendingDropdowns, self)
-        return
-    end
-			local Values = self.Values
+			local Values = Dropdown.Values
 			local Buttons = {}
 
 			for _, Element in next, DropdownScrollFrame:GetChildren() do
                 if not Element:IsA("UIListLayout") 
-                   and Element ~= self.SearchBar 
+                   and Element ~= Dropdown.SearchBar 
                    and not Element:IsA("UIPadding") then
                     Element:Destroy()
                 end
@@ -3248,9 +3270,9 @@ ElementsTable.Dropdown = (function()
 				local Selected
 
 				if Config.Multi then
-					Selected = self.Value[Value]
+					Selected = Dropdown.Value[Value]
 				else
-					Selected = self.Value == Value
+					Selected = Dropdown.Value == Value
 				end
 
 				local BackMotor, SetBackTransparency = Creator.SpringMotor(1, Button, "BackgroundTransparency")
@@ -3276,12 +3298,12 @@ ElementsTable.Dropdown = (function()
 
 				function Table:UpdateButton()
 					if Config.Multi then
-						Selected = self.Value[Value]
+						Selected = Dropdown.Value[Value]
 						if Selected then
 							SetBackTransparency(0.89)
 						end
 					else
-						Selected = self.Value == Value
+						Selected = Dropdown.Value == Value
 						SetBackTransparency(Selected and 0.89 or 1)
 					end
 
@@ -3300,10 +3322,10 @@ ElementsTable.Dropdown = (function()
 						else
 							if Config.Multi then
 								Selected = Try
-								self.Value[Value] = Selected and true or nil
+								Dropdown.Value[Value] = Selected and true or nil
 							else
 								Selected = Try
-								self.Value = Selected and Value or nil
+								Dropdown.Value = Selected and Value or nil
 
 								for _, OtherButton in next, Buttons do
 									OtherButton:UpdateButton()
@@ -3313,8 +3335,8 @@ ElementsTable.Dropdown = (function()
 							Table:UpdateButton()
 							Dropdown:Display()
 
-							Library:SafeCallback(Dropdown.Callback, self.Value)
-							Library:SafeCallback(Dropdown.Changed, self.Value)
+							Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+							Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
 						end
 					end
 				end)
@@ -3337,11 +3359,12 @@ ElementsTable.Dropdown = (function()
 
 			RecalculateCanvasSize()
 			RecalculateListSize()
+			Dropdown._listBuilt = true
 		end
 
 		function Dropdown:SetValues(NewValues)
 			if NewValues then
-				self.Values = NewValues
+				Dropdown.Values = NewValues
 			end
 
 			Dropdown:BuildDropdownList()
@@ -3349,32 +3372,47 @@ ElementsTable.Dropdown = (function()
 
 		function Dropdown:OnChanged(Func)
 			Dropdown.Changed = Func
-			Func(self.Value)
+			Func(Dropdown.Value)
 		end
 
-		function Dropdown:SetValue(Val)
+		function Dropdown:SetValue(Val, silent)
 			if Dropdown.Multi then
 				local nTable = {}
 
 				for Value, Bool in next, Val do
-					if table.find(self.Values, Value) then
+					if table.find(Dropdown.Values, Value) then
 						nTable[Value] = true
 					end
 				end
 
-				self.Value = nTable
+				Dropdown.Value = nTable
 			else
 				if not Val then
-					self.Value = nil
-				elseif table.find(self.Values, Val) then
-					self.Value = Val
+					Dropdown.Value = nil
+				elseif table.find(Dropdown.Values, Val) then
+					Dropdown.Value = Val
 				end
 			end
 
-			Dropdown:BuildDropdownList()
+			if silent or (Library and Library._isLoading) then
 
-			Library:SafeCallback(Dropdown.Callback, self.Value)
-			Library:SafeCallback(Dropdown.Changed, self.Value)
+
+				if Library and Library._isLoading then Library:_queueDropdownRebuild(Dropdown) end
+
+
+			else
+
+
+				Dropdown:BuildDropdownList()
+
+
+				Library:SafeCallback(Dropdown.Callback, Dropdown.Value)
+
+
+				Library:SafeCallback(Dropdown.Changed, Dropdown.Value)
+
+
+			end
 		end
 
 		function Dropdown:Destroy()
@@ -3382,24 +3420,26 @@ ElementsTable.Dropdown = (function()
 			Library.Options[Idx] = nil
 		end
 
-		Dropdown:BuildDropdownList()
+		if not (Library and Library._deferDropdownBuild) then
+			Dropdown:BuildDropdownList()
+		end
 		Dropdown:Display()
 
 		local Defaults = {}
 
 		if type(Config.Default) == "string" then
-			local Idx = table.find(self.Values, Config.Default)
+			local Idx = table.find(Dropdown.Values, Config.Default)
 			if Idx then
 				table.insert(Defaults, Idx)
 			end
 		elseif type(Config.Default) == "table" then
 			for _, Value in next, Config.Default do
-				local Idx = table.find(self.Values, Value)
+				local Idx = table.find(Dropdown.Values, Value)
 				if Idx then
 					table.insert(Defaults, Idx)
 				end
 			end
-		elseif type(Config.Default) == "number" and self.Values[Config.Default] ~= nil then
+		elseif type(Config.Default) == "number" and Dropdown.Values[Config.Default] ~= nil then
 			table.insert(Defaults, Config.Default)
 		end
 
@@ -3407,9 +3447,9 @@ ElementsTable.Dropdown = (function()
 			for i = 1, #Defaults do
 				local Index = Defaults[i]
 				if Config.Multi then
-					self.Value[self.Values[Index]] = true
+					Dropdown.Value[Dropdown.Values[Index]] = true
 				else
-					self.Value = self.Values[Index]
+					Dropdown.Value = Dropdown.Values[Index]
 				end
 
 				if not Config.Multi then
@@ -3584,14 +3624,16 @@ ElementsTable.Slider = (function()
 			Func(Slider.Value)
 		end
 
-		function Slider:SetValue(Value)
+		function Slider:SetValue(Value, silent)
 			self.Value = Library:Round(math.clamp(Value, Slider.Min, Slider.Max), Slider.Rounding)
 			SliderDot.Position = UDim2.new((self.Value - Slider.Min) / (Slider.Max - Slider.Min), -7, 0.5, 0)
 			SliderFill.Size = UDim2.fromScale((self.Value - Slider.Min) / (Slider.Max - Slider.Min), 1)
 			SliderDisplay.Text = tostring(self.Value)
 
+			if not (silent or (Library and Library._isLoading)) then
 			Library:SafeCallback(Slider.Callback, self.Value)
 			Library:SafeCallback(Slider.Changed, self.Value)
+		end
 		end
 
 		function Slider:Destroy()
@@ -4261,14 +4303,16 @@ ElementsTable.Colorpicker = (function()
 			Dialog:Open()
 		end
 
-		function Colorpicker:Display()
+		function Colorpicker:Display(silent)
 			Colorpicker.Value = Color3.fromHSV(Colorpicker.Hue, Colorpicker.Sat, Colorpicker.Vib)
 
 			DisplayFrameColor.BackgroundColor3 = Colorpicker.Value
 			DisplayFrameColor.BackgroundTransparency = Colorpicker.Transparency
 
+			if not (silent or (Element and Element.Library and Element.Library._isLoading)) then
 			Element.Library:SafeCallback(Colorpicker.Callback, Colorpicker.Value)
 			Element.Library:SafeCallback(Colorpicker.Changed, Colorpicker.Value)
+		end
 		end
 
 		function Colorpicker:SetValue(HSV, Transparency)
@@ -4276,10 +4320,10 @@ ElementsTable.Colorpicker = (function()
 
 			Colorpicker.Transparency = Transparency or 0
 			Colorpicker:SetHSVFromRGB(Color)
-			Colorpicker:Display()
+			Colorpicker:Display(silent)
 		end
 
-		function Colorpicker:SetValueRGB(Color, Transparency)
+		function Colorpicker:SetValueRGB(Color, Transparency, silent)
 			Colorpicker.Transparency = Transparency or 0
 			Colorpicker:SetHSVFromRGB(Color)
 			Colorpicker:Display()
@@ -4340,7 +4384,7 @@ ElementsTable.Input = (function()
 
 		local Box = Textbox.Input
 
-		function Input:SetValue(Text)
+		function Input:SetValue(Text, silent)
 			if Config.MaxLength and #Text > Config.MaxLength then
 				Text = Text:sub(1, Config.MaxLength)
 			end
@@ -4354,8 +4398,10 @@ ElementsTable.Input = (function()
 			Input.Value = Text
 			Box.Text = Text
 
+			if not (silent or (Library and Library._isLoading)) then
 			Library:SafeCallback(Input.Callback, Input.Value)
 			Library:SafeCallback(Input.Changed, Input.Value)
+		end
 		end
 
 		if Input.Finished then
@@ -5219,7 +5265,6 @@ local Icons = {
 	["lucide-message-circle-question"] = "rbxassetid://16970049192",
 	["lucide-webhook"] = "rbxassetid://17320556264",
 }
-
 function Library:GetIcon(Name)
 	if Name ~= nil then
 		if string.find(Name, "rbxassetid://") then
@@ -5275,7 +5320,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(data.value), true
 				end
 			end,
 		},
@@ -5285,7 +5330,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(data.value), true
 				end
 			end,
 		},
@@ -5295,7 +5340,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value)
+					SaveManager.Options[idx]:SetValue(data.value), true
 				end
 			end,
 		},
@@ -5305,7 +5350,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
+					SaveManager.Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency), true
 				end
 			end,
 		},
@@ -5370,38 +5415,38 @@ local SaveManager = {} do
 		return true
 	end
 
-	function SaveManager:Load(name)
-    if not name then
-        return false, "no config file is selected"
-    end
-    if not isfile(name) then
-        return false, "Create Config Save File"
-    end
+	
+    function SaveManager:Load(name)
+		if (not name) then
+			return false, "no config file is selected"
+		end
 
-    local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(name))
-    if not ok then
-        return false, "decode error"
-    end
+		local file = name
+		if not isfile(file) then return false, "Create Config Save File" end
 
-    -- ▶️ START batch loading (skip tween/rebuild)
-    Library._isLoading = true
+		local success, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+		if not success then return false, "decode error" end
 
-    for _, option in next, decoded.objects do
-        if self.Parser[option.type] and not self.Ignore[option.idx] then
-            self.Parser[option.type].Load(option.idx, option)
+        -- Gate heavy UI updates during load
+        Library._isLoading = true
+
+		for _, option in next, decoded.objects do
+			local parser = self.Parser[option.type]
+			if parser and not self.Ignore[option.idx] then
+                -- Pass 'true' to SetValue methods to indicate silent mode
+				parser.Load(option.idx, option, true)
+			end
+		end
+
+        Library._isLoading = false
+
+        -- Do one-time batch rebuild for widgets that deferred heavy work
+        if Library._postLoadRebuild then
+            pcall(function() Library:_postLoadRebuild() end)
         end
-    end
 
-    -- ▶️ END batch loading, rebuild dropdowns
-    Library._isLoading = false
-
-    for _, dd in ipairs(Library._pendingDropdowns) do
-        dd:BuildDropdownList()
-    end
-    Library._pendingDropdowns = {}
-
-    return true
-end
+		return true
+	end
 
 
 	function SaveManager:IgnoreThemeSettings()
