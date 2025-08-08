@@ -1,6 +1,6 @@
 
 
---V8
+--V9
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5318,7 +5318,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value), true
+					SaveManager.Options[idx]:SetValue(data.value, true)
 				end
 			end,
 		},
@@ -5328,7 +5328,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value), true
+					SaveManager.Options[idx]:SetValue(data.value, true)
 				end
 			end,
 		},
@@ -5338,7 +5338,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValue(data.value), true
+					SaveManager.Options[idx]:SetValue(data.value, true)
 				end
 			end,
 		},
@@ -5348,7 +5348,7 @@ local SaveManager = {} do
 			end,
 			Load = function(idx, data)
 				if SaveManager.Options[idx] then 
-					SaveManager.Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency), true
+					SaveManager.Options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency, true)
 				end
 			end,
 		},
