@@ -1,3 +1,4 @@
+--New
 
 
 --V1
@@ -2824,12 +2825,12 @@ ElementsTable.Toggle = (function()
 			Creator.OverrideTag(ToggleCircle, { ImageColor3 = Toggle.Value and "ToggleToggled" or "ToggleSlider" })
 			TweenService:Create(
 				ToggleCircle,
-				TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 				{ Position = UDim2.new(0, Toggle.Value and 19 or 2, 0.5, 0) }
 			):Play()
 			TweenService:Create(
 				ToggleSlider,
-				TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
+				TweenInfo.new(0.01, Enum.EasingStyle.Quint, Enum.EasingDirection.Out),
 				{ BackgroundTransparency = Toggle.Value and 0.45 or 1 }
 			):Play()
 			ToggleCircle.ImageTransparency = Toggle.Value and 0 or 0.5
@@ -3117,7 +3118,7 @@ ElementsTable.Dropdown = (function()
 			DropdownHolderCanvas.Visible = true
 			TweenService:Create(
 				DropdownHolderFrame,
-				TweenInfo.new(0.3, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
+				TweenInfo.new(0.01, Enum.EasingStyle.Quart, Enum.EasingDirection.Out),
 				{ Size = UDim2.fromScale(1, 1) }
 			):Play()
 		end
