@@ -1,7 +1,6 @@
 
 
-
---V4
+--V5
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -3084,11 +3083,13 @@ ElementsTable.Dropdown = (function()
 
 		local ListSizeX = 0
 		local function RecalculateListSize()
-			if #self.Values > 10 then
-				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
-			else
-				DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
-			end
+		    local count = (self.Values and #self.Values) or 0
+		    if count > 10 then
+		        DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, 392)
+		    else
+		        DropdownHolderCanvas.Size = UDim2.fromOffset(ListSizeX, DropdownListLayout.AbsoluteContentSize.Y + 10)
+		    end
+		end
 		end
 
 		local function RecalculateCanvasSize()
