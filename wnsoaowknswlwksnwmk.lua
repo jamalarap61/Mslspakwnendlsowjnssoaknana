@@ -1,6 +1,6 @@
 
 
---V7
+--V8
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -2871,8 +2871,6 @@ ElementsTable.Toggle = (function()
 			if not __suppress then
 				Library:SafeCallback(Toggle.Callback, Toggle.Value)
 				Library:SafeCallback(Toggle.Changed, Toggle.Value)
-			end
-		end
 			end
 		end
 
