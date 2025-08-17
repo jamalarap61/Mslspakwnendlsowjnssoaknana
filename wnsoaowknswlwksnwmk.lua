@@ -1,6 +1,6 @@
 
 
---V16
+--V17
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -5418,23 +5418,95 @@ local SaveManager = {} do
 
 	
     function SaveManager:Load(name)
+
 		if (not name) then
-    return false, "no config file is selected"
-end
+			return false, "no config file is selected"
+		end
 
-local file = name
-if not isfile(file) then return false, "Create Config Save File" end
+		local file = name
+		if not isfile(file) then return false, "Create Config Save File" end
 
-local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
-if not ok then return false, "decode error" end
+		local ok, decoded = pcall(httpService.JSONDecode, httpService, readfile(file))
+		if not ok then return false, "decode error" end
 
-Library._isLoading = true
+		-- Mark loading to allow widgets to defer heavy work (e.g., dropdown list rebuilds)
+		Library._isLoading = true
 
-local Options = self.Options
-local Parser = self.Parser
-local Ignore = self.Ignore
-local objects = decoded.objects
-if type(objects) ~= "table" then
+		local Options = self.Options
+		local Parser  = self.Parser
+		local Ignore  = self.Ignore
+		local objects = decoded.objects
+
+		if type(objects) ~= "table" then
+			Library._isLoading = false
+			return false, "invalid config format"
+		end
+
+		-- Queues to control callback order
+		local _dropdownQueue, _toggleQueue, _otherQueue = {}, {}, {}
+
+		-- 1) Apply values SILENTLY and collect callback targets by type
+		for i = 1, #objects do
+			local o = objects[i]
+			local idx = o.idx
+			if idx and not Ignore[idx] then
+				local opt = Options[idx]
+				if opt then
+					if o.type == "Toggle" then
+						-- Apply silently to avoid early callback
+						if opt.Value ~= o.value then opt:SetValue(o.value, true) end
+						table.insert(_toggleQueue, opt)
+					elseif o.type == "Slider" then
+						if tostring(opt.Value) ~= tostring(o.value) then opt:SetValue(o.value, true) end
+						table.insert(_otherQueue, opt)
+					elseif o.type == "Input" then
+						if tostring(opt.Value or "") ~= tostring(o.text or "") then opt:SetValue(o.text, true) end
+						table.insert(_otherQueue, opt)
+					elseif o.type == "Dropdown" then
+						-- Always apply silently; heavy work & display are deferred while _isLoading=true
+						opt:SetValue(o.value, true)
+						table.insert(_dropdownQueue, opt)
+					elseif o.type == "Colorpicker" then
+						opt:SetValueRGB(Color3.fromHex(o.value), o.transparency, true)
+						table.insert(_otherQueue, opt)
+					elseif Parser[o.type] then
+						-- Fallback for custom/unknown types via parser
+						Parser[o.type].Load(idx, o, true)
+						table.insert(_otherQueue, opt or { Callback = nil, Changed = nil })
+					end
+				else
+					-- Option might not be registered yet; try parser directly
+					local p = Parser[o.type]
+					if p then p.Load(idx, o, true) end
+				end
+			end
+		end
+
+		-- 2) Flush callbacks in REQUIRED ORDER
+		local function _flush(queue)
+			for _, opt in ipairs(queue) do
+				if opt then
+					-- Prefer SafeCallback to never explode the load process
+					Library:SafeCallback(opt.Callback, opt.Value)
+					Library:SafeCallback(opt.Changed,  opt.Value)
+				end
+			end
+		end
+
+		-- Dropdowns FIRST (often feed the state for toggles)
+		_flush(_dropdownQueue)
+
+		-- Optionally rebuild any heavy controls after values are in place
+		if Library._postLoadRebuild then
+			pcall(function() Library:_postLoadRebuild() end)
+		end
+
+		-- Then Toggles
+		_flush(_toggleQueue)
+
+		-- Others (sliders, inputs, etc.) free order after the above
+		_flush(_otherQueue)
+
     Library._isLoading = false
     return false, "invalid config format"
 end
